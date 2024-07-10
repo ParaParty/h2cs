@@ -36,7 +36,7 @@ fun Parameter.toCS(ctx: Context): String {
 fun APIInfo.toCS(ctx: Context): String {
     val cSymbolName = functionName
     val methodName = if (cSymbolName.startsWith(ctx.projectName)) {
-        cSymbolName.substring(6)
+        cSymbolName.substring(ctx.projectName.length)
     } else {
         cSymbolName
     }

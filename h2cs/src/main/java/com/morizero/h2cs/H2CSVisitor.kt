@@ -5,13 +5,16 @@ import com.morizero.h2cs.generated.parser.CPP14Parser
 import com.morizero.h2cs.generated.parser.CPP14ParserBaseVisitor
 import com.morizero.h2cs.model.APIInfo
 import com.morizero.h2cs.model.Attribute
+import com.morizero.h2cs.model.Context
 import com.morizero.h2cs.model.Parameter
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.Interval
 
-class H2CSVisitor(val input: CodePointCharStream) : CPP14ParserBaseVisitor<Unit>() {
+class H2CSVisitor(val ctx: Context) : CPP14ParserBaseVisitor<Unit>() {
+    val input: CodePointCharStream = ctx.inputCodePointCharStream!!
     val apiList = mutableListOf<APIInfo>()
     val frameworkStaticBinding = mutableListOf<String>()
+    val publicApiAnnotation: String = ctx.projectName.uppercase() + "_API"
 
     private fun parseAttribute(attribute: List<CPP14Parser.AttributeContext>): List<Attribute> {
         val attributes = mutableListOf<Attribute>()
@@ -19,8 +22,7 @@ class H2CSVisitor(val input: CodePointCharStream) : CPP14ParserBaseVisitor<Unit>
             val item = Attribute()
             item.namespace = attr.attributeNamespace()?.text ?: ""
             item.name = attr.Identifier().text
-            item.args =
-                attr.attributeArgumentClause()?.balancedTokenSeq()?.balancedtoken()?.map { it.text } ?: listOf()
+            item.args = attr.attributeArgumentClause()?.balancedTokenSeq()?.balancedtoken()?.map { it.text } ?: listOf()
             attributes.add(item)
         }
         return attributes
@@ -79,7 +81,7 @@ class H2CSVisitor(val input: CodePointCharStream) : CPP14ParserBaseVisitor<Unit>
             val start = it.start.startIndex
             val stop = it.stop.stopIndex
             input.getText(Interval(start, stop))
-        }.filter { it != "MILIZE_API" }.joinToString(separator = " ", prefix = "", postfix = " ")
+        }.filter { it != publicApiAnnotation }.joinToString(separator = " ", prefix = "", postfix = " ")
 
         val functionName = input.getText(Interval(funcNameStart, funcNameStop));
         val bindingDeclFunctionName = "FrameworkBinding$functionName";

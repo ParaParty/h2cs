@@ -11,11 +11,11 @@ java {
 }
 
 group = "party.para"
-version = "1.0.0"
+version = "1.0.1"
 
 subprojects {
     group = "party.para"
-    version = "1.0.0"
+    version = "1.0.1"
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"

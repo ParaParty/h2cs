@@ -22,11 +22,12 @@ object Main {
         val parser = CPP14Parser(tokens)
 
         val tree = parser.translationUnit()
+        val ctx = SimpleContext(projectName)
+        ctx.inputCodePointCharStream = input
 
-        val visitor = H2CSVisitor(input)
+        val visitor = H2CSVisitor(ctx)
         visitor.visit(tree)
 
-        val ctx = SimpleContext(projectName)
 
         visitor.writeCSharpBinding(ctx, File(args[2]))
         visitor.writeFrameworkBinding(ctx, File(args[3]))

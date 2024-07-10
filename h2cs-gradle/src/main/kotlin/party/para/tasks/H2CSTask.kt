@@ -81,11 +81,13 @@ abstract class H2CSTask : DefaultTask() {
         val parser = CPP14Parser(tokens)
         val tree = parser.translationUnit()
 
-        val visitor = H2CSVisitor(input)
-        visitor.visit(tree)
-
         val ctx = SimpleContext(projectName)
         ctx.typeMapping = typeMapping
+        ctx.inputCodePointCharStream = input
+
+        val visitor = H2CSVisitor(ctx)
+        visitor.visit(tree)
+
         csharpBindingOutputPath.takeIfNotNull {
             visitor.writeCSharpBinding(ctx, File(it))
         }

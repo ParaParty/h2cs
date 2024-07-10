@@ -1,6 +1,10 @@
 package com.morizero.h2cs.model
 
+import org.antlr.v4.runtime.CodePointCharStream
+
 interface Context {
+    val inputCodePointCharStream: CodePointCharStream?
+
     val projectName: String
 
     fun resolveCPPTypeToCSType(cppType: List<String>?): String
@@ -31,6 +35,8 @@ class SimpleContext(projectName: String) : Context {
             listOf("double") to "double",
         )
     }
+
+    override var inputCodePointCharStream: CodePointCharStream? = null
 
     override var projectName: String = ""
 
