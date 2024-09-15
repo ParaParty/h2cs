@@ -5,10 +5,18 @@ import com.morizero.h2cs.model.Context
 import com.morizero.h2cs.model.Parameter
 
 fun Parameter.toCS(ctx: Context): String {
-    val modifier = if (isReference) {
-        "out"
+    val modifier: String
+    val refTypeAttribute = attributes.firstOrNull { it.namespace == "milize" && it.name == "RefType" }
+    if (refTypeAttribute != null) {
+        when (refTypeAttribute.args[0].lowercase()) {
+            "\"out\"" -> modifier = "out"
+            "\"ref\"" -> modifier = "ref"
+            else -> throw Exception("Invalid RefType value: ${refTypeAttribute.args[0]}")
+        }
+    } else if (isReference) {
+        modifier = "out"
     } else {
-        ""
+        modifier = ""
     }
 
     val printedType = attributes.firstOrNull { it.namespace == "milize" && it.name == "CSharpType" }.let {
