@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.morizero"
-version = "1.0-SNAPSHOT"
+version = "1.0.2"
 
 dependencies {
     antlr("org.antlr:antlr4:4.13.1")

@@ -53,7 +53,7 @@ Convert CPP Header `.h` to CSharp `.cs` binding
    In `build.gradle.kts`
     ```kotlin
     plugins {
-        id("party.para.h2cs") version "1.0.1" apply true
+        id("party.para.h2cs") version "1.0.2" apply true
     }
     
     group = "com.example.awesomeproject"
