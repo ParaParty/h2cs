@@ -49,11 +49,6 @@ project.ext.set("POM_NAME", "ParaParty H2CS")
 project.ext.set("POM_DESCRIPTION", "ParaParty H2CS")
 project.ext.set("ARTIFACT_ID", "h2cs")
 
-//components.asMap.forEach { (k, v) ->
-//    println("----------------")
-//    println("$k: $v")
-//}
-
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -117,23 +112,3 @@ tasks.javadoc {
         (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
 }
-
-//tasks {
-//    getByName<DefaultTask>("publish") {
-//        dependsOn(jar)
-//    }
-//    getByName<DefaultTask>("publishAllPublicationsToMavenRepository") {
-//        dependsOn(jar)
-//    }
-//    getByName<DefaultTask>("publishToMavenLocal") {
-//        dependsOn(jar)
-//    }
-//
-//    getAllTasks(false).forEach { (proj, tasks) ->
-//        println("----------------")
-//        println(proj.name)
-//        tasks.forEach { task ->
-//            println("${task.name} ${task.javaClass.name}")
-//        }
-//    }
-//}

@@ -31,11 +31,6 @@ project.ext.set("POM_NAME", "ParaParty H2CS Gradle")
 project.ext.set("POM_DESCRIPTION", "ParaParty H2CS Gradle")
 project.ext.set("ARTIFACT_ID", "h2cs-gradle")
 
-//components.asMap.forEach { (k, v) ->
-//    println("----------------")
-//    println("$k: $v")
-//}
-
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -75,9 +70,9 @@ publishing {
     }
     repositories {
         maven {
-            // change URLs to point to your repos, e.g. http://my.org/repo
             val releasesRepoUrl = uri(layout.buildDirectory.dir("repos/releases"))
             val snapshotsRepoUrl = uri(layout.buildDirectory.dir("repos/snapshots"))
+
 //            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
 //            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
 //            credentials {
@@ -111,13 +106,5 @@ afterEvaluate {
             dependsOn(publishMavenPublicationToMavenRepository)
             dependsOn(publishMavenPublicationToMavenLocal)
         }
-
-//    getAllTasks(false).forEach { (proj, tasks) ->
-//        println("----------------")
-//        println(proj.name)
-//        tasks.forEach { task ->
-//            println("${task.name} ${task.javaClass.name}")
-//        }
-//    }
     }
 }
