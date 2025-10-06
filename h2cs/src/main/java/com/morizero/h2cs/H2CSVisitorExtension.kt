@@ -37,7 +37,18 @@ ${apiList.joinToString("\n\n") { it.toCS(ctx) }}
         val result = """#include "${ctx.projectName}/${ctx.projectName.lowercase()}_game_interface.h"
 
 extern "C" {
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-attributes"
+#endif
+
 ${frameworkStaticBinding.joinToString("\n\n")}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 }
 """
 
