@@ -17,9 +17,5 @@ kotlin {
 }
 
 application {
-    mainClass = "com.morizero.h2cs.Main"
-}
-
-tasks.shadowJar {
-
+    mainClass = "com.morizero.h2cs.cmd.Main"
 }

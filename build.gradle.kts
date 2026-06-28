@@ -1,7 +1,7 @@
 plugins {
     `java-library`
-    kotlin("jvm") version "2.0.0"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm") version "2.2.21"
+    id("com.gradleup.shadow") version "9.4.3"
     `maven-publish`
 }
 

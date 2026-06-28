@@ -1,6 +1,7 @@
 package com.morizero.h2cs
 
 import com.morizero.h2cs.api.toCS
+import com.morizero.h2cs.api.toFrameworkBinding
 import com.morizero.h2cs.model.Context
 import java.io.File
 
@@ -43,7 +44,7 @@ extern "C" {
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 #endif
 
-${frameworkStaticBinding.joinToString("\n\n")}
+${apiList.map { it.toFrameworkBinding() }.filter { it.isNotEmpty() }.joinToString("\n\n")}
 
 #ifdef __clang__
 #pragma clang diagnostic pop

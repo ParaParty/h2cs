@@ -39,7 +39,7 @@ options {
 /*Basic concepts*/
 
 translationUnit
-    : declarationseq? EOF
+    : declarationSeq? EOF
     ;
 
 /*Expressions*/
@@ -99,7 +99,7 @@ captureList
 
 capture
     : simpleCapture
-    | initcapture
+    | initCapture
     ;
 
 simpleCapture
@@ -107,7 +107,7 @@ simpleCapture
     | This
     ;
 
-initcapture
+initCapture
     : And? Identifier initializer
     ;
 
@@ -365,7 +365,7 @@ declarationStatement
 
 /*Declarations*/
 
-declarationseq
+declarationSeq
     : declaration+
     ;
 
@@ -525,18 +525,18 @@ enumSpecifier
     ;
 
 enumHead
-    : enumkey attributeSpecifierSeq? (nestedNameSpecifier? Identifier)? enumbase?
+    : enumKey attributeSpecifierSeq? (nestedNameSpecifier? Identifier)? enumBase?
     ;
 
 opaqueEnumDeclaration
-    : enumkey attributeSpecifierSeq? Identifier enumbase? Semi
+    : enumKey attributeSpecifierSeq? Identifier enumBase? Semi
     ;
 
-enumkey
+enumKey
     : Enum (Class | Struct)?
     ;
 
-enumbase
+enumBase
     : Colon typeSpecifierSeq
     ;
 
@@ -562,7 +562,7 @@ originalNamespaceName
     ;
 
 namespaceDefinition
-    : Inline? Namespace (Identifier | originalNamespaceName)? LeftBrace namespaceBody = declarationseq? RightBrace
+    : Inline? Namespace (Identifier | originalNamespaceName)? LeftBrace namespaceBody = declarationSeq? RightBrace
     ;
 
 namespaceAlias
@@ -570,10 +570,10 @@ namespaceAlias
     ;
 
 namespaceAliasDefinition
-    : Namespace Identifier Assign qualifiednamespacespecifier Semi
+    : Namespace Identifier Assign qualifiedNamespaceSpecifier Semi
     ;
 
-qualifiednamespacespecifier
+qualifiedNamespaceSpecifier
     : nestedNameSpecifier? namespaceName
     ;
 
@@ -590,7 +590,7 @@ asmDefinition
     ;
 
 linkageSpecification
-    : Extern StringLiteral (LeftBrace declarationseq? RightBrace | declaration)
+    : Extern StringLiteral (LeftBrace declarationSeq? RightBrace | declaration)
     ;
 
 attributeSpecifierSeq
@@ -599,10 +599,10 @@ attributeSpecifierSeq
 
 attributeSpecifier
     : LeftBracket LeftBracket attributeList? RightBracket RightBracket
-    | alignmentspecifier
+    | alignmentSpecifier
     ;
 
-alignmentspecifier
+alignmentSpecifier
     : Alignas LeftParen (theTypeId | constantExpression) Ellipsis? RightParen
     ;
 
@@ -623,10 +623,10 @@ attributeArgumentClause
     ;
 
 balancedTokenSeq
-    : balancedtoken+
+    : balancedToken+
     ;
 
-balancedtoken
+balancedToken
     : LeftParen balancedTokenSeq RightParen
     | LeftBracket balancedTokenSeq RightBracket
     | LeftBrace balancedTokenSeq RightBrace
@@ -653,7 +653,7 @@ pointerDeclarator
     ;
 
 noPointerDeclarator
-    : declaratorid attributeSpecifierSeq?
+    : declaratorId attributeSpecifierSeq?
     | noPointerDeclarator (
         parametersAndQualifiers
         | LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
@@ -662,7 +662,7 @@ noPointerDeclarator
     ;
 
 parametersAndQualifiers
-    : LeftParen parameterDeclarationClause? RightParen cvqualifierseq? refqualifier? exceptionSpecification? attributeSpecifierSeq?
+    : LeftParen parameterDeclarationClause? RightParen cvQualifierSeq? refQualifier? exceptionSpecification? attributeSpecifierSeq?
     ;
 
 trailingReturnType
@@ -671,10 +671,10 @@ trailingReturnType
 
 pointerOperator
     : (And | AndAnd) attributeSpecifierSeq?
-    | nestedNameSpecifier? Star attributeSpecifierSeq? cvqualifierseq?
+    | nestedNameSpecifier? Star attributeSpecifierSeq? cvQualifierSeq?
     ;
 
-cvqualifierseq
+cvQualifierSeq
     : cvQualifier+
     ;
 
@@ -683,12 +683,12 @@ cvQualifier
     | Volatile
     ;
 
-refqualifier
+refQualifier
     : And
     | AndAnd
     ;
 
-declaratorid
+declaratorId
     : Ellipsis? idExpression
     ;
 
@@ -703,18 +703,14 @@ abstractDeclarator
     ;
 
 pointerAbstractDeclarator
-    : noPointerAbstractDeclarator
-    | pointerOperator+ noPointerAbstractDeclarator?
+    : pointerOperator* (noPointerAbstractDeclarator | pointerOperator)
     ;
 
 noPointerAbstractDeclarator
-    : noPointerAbstractDeclarator (
+    : (parametersAndQualifiers | LeftParen pointerAbstractDeclarator RightParen) (
         parametersAndQualifiers
-        | noPointerAbstractDeclarator LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
-    )
-    | parametersAndQualifiers
-    | LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
-    | LeftParen pointerAbstractDeclarator RightParen
+        | LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
+    )*
     ;
 
 abstractPackDeclarator
@@ -722,11 +718,10 @@ abstractPackDeclarator
     ;
 
 noPointerAbstractPackDeclarator
-    : noPointerAbstractPackDeclarator (
+    : Ellipsis (
         parametersAndQualifiers
         | LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
-    )
-    | Ellipsis
+    )*
     ;
 
 parameterDeclarationClause
@@ -806,10 +801,10 @@ classKey
     ;
 
 memberSpecification
-    : (memberdeclaration | accessSpecifier Colon)+
+    : (memberDeclaration | accessSpecifier Colon)+
     ;
 
-memberdeclaration
+memberDeclaration
     : attributeSpecifierSeq? declSpecifierSeq? memberDeclaratorList? Semi
     | functionDefinition
     | usingDeclaration
@@ -907,10 +902,10 @@ memInitializerList
     ;
 
 memInitializer
-    : meminitializerid (LeftParen expressionList? RightParen | bracedInitList)
+    : memInitializerId (LeftParen expressionList? RightParen | bracedInitList)
     ;
 
-meminitializerid
+memInitializerId
     : classOrDeclType
     | Identifier
     ;
@@ -928,10 +923,10 @@ literalOperatorId
 /*Templates*/
 
 templateDeclaration
-    : Template Less templateparameterList Greater declaration
+    : Template Less templateParameterList Greater declaration
     ;
 
-templateparameterList
+templateParameterList
     : templateParameter (Comma templateParameter)*
     ;
 
@@ -941,7 +936,7 @@ templateParameter
     ;
 
 typeParameter
-    : ((Template Less templateparameterList Greater)? Class | Typename_) (
+    : ((Template Less templateParameterList Greater)? Class | Typename_) (
         Ellipsis? Identifier?
         | Identifier? Assign theTypeId
     )
@@ -1011,7 +1006,7 @@ throwExpression
 
 exceptionSpecification
     : dynamicExceptionSpecification
-    | noeExceptSpecification
+    | noExceptSpecification
     ;
 
 dynamicExceptionSpecification
@@ -1022,7 +1017,7 @@ typeIdList
     : theTypeId Ellipsis? (Comma theTypeId Ellipsis?)*
     ;
 
-noeExceptSpecification
+noExceptSpecification
     : Noexcept LeftParen constantExpression RightParen
     | Noexcept
     ;
@@ -1051,6 +1046,7 @@ theOperator
     | PlusAssign
     | MinusAssign
     | StarAssign
+    | DivAssign
     | ModAssign
     | XorAssign
     | AndAssign

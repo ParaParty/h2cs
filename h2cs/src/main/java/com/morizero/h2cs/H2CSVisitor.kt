@@ -7,13 +7,14 @@ import com.morizero.h2cs.model.APIInfo
 import com.morizero.h2cs.model.Attribute
 import com.morizero.h2cs.model.Context
 import com.morizero.h2cs.model.Parameter
+import com.morizero.h2cs.model.ReturnType
+import com.morizero.h2cs.model.TypeInfo
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.Interval
 
 class H2CSVisitor(val ctx: Context) : CPP14ParserBaseVisitor<Unit>() {
     val input: CodePointCharStream = ctx.inputCodePointCharStream!!
     val apiList = mutableListOf<APIInfo>()
-    val frameworkStaticBinding = mutableListOf<String>()
     val publicApiAnnotation: String = ctx.projectName.uppercase() + "_API"
 
     private fun parseAttribute(attribute: List<CPP14Parser.AttributeContext>): List<Attribute> {
@@ -22,52 +23,85 @@ class H2CSVisitor(val ctx: Context) : CPP14ParserBaseVisitor<Unit>() {
             val item = Attribute()
             item.namespace = attr.attributeNamespace()?.text ?: ""
             item.name = attr.Identifier().text
-            item.args = attr.attributeArgumentClause()?.balancedTokenSeq()?.balancedtoken()?.map { it.text } ?: listOf()
+            item.args = attr.attributeArgumentClause()?.balancedTokenSeq()?.balancedToken()?.map { it.text } ?: listOf()
             attributes.add(item)
         }
         return attributes
     }
 
+    private fun parseAttributeSpecifierSeq(attributeSpecifierSeq: CPP14Parser.AttributeSpecifierSeqContext?): List<Attribute> {
+        return attributeSpecifierSeq?.attributeSpecifier()?.flatMap {
+            parseAttribute(it.attributeList().attribute())
+        } ?: listOf()
+    }
+
+    private fun <T : TypeInfo> parseTypeInfo(
+        typeInfo: T,
+        declSpecifiers: List<CPP14Parser.DeclSpecifierContext>,
+        pointerDeclarator: CPP14Parser.PointerDeclaratorContext,
+        attributes: List<Attribute> = listOf(),
+    ): T {
+        typeInfo.type = declSpecifiers.map { it.text }
+        typeInfo.attributes = attributes
+        typeInfo.pointerOperators = pointerDeclarator.pointerOperator().map { it.text }
+        typeInfo.isReference = pointerDeclarator.pointerOperator().any { it.text.contains("&") }
+        typeInfo.isPointer = pointerDeclarator.pointerOperator().any { it.text.contains("*") }
+        return typeInfo
+    }
+
+    private fun parseParameter(
+        declSpecifiers: List<CPP14Parser.DeclSpecifierContext>,
+        pointerDeclarator: CPP14Parser.PointerDeclaratorContext,
+        attributes: List<Attribute> = listOf(),
+    ): Parameter {
+        val parameter = parseTypeInfo(Parameter(), declSpecifiers, pointerDeclarator, attributes)
+        parameter.name = pointerDeclarator.noPointerDeclarator().text
+        return parameter
+    }
+
+    private fun parseReturnType(
+        declSpecifiers: List<CPP14Parser.DeclSpecifierContext>,
+        pointerDeclarator: CPP14Parser.PointerDeclaratorContext,
+        attributes: List<Attribute> = listOf(),
+    ): ReturnType {
+        return parseTypeInfo(ReturnType(), declSpecifiers, pointerDeclarator, attributes)
+    }
+
     override fun visitSimpleDeclaration(ctx: CPP14Parser.SimpleDeclarationContext) {
         val ret = APIInfo()
 
-        for (attrSpec in ctx.attributeSpecifierSeq()?.attributeSpecifier() ?: listOf()) {
-            ret.attributes += parseAttribute(attrSpec.attributeList().attribute())
-        }
-        if (ret.attributes.any { it.namespace == "milize" && it.name == "CSharpIgnore" }) {
+        val declarationAttributes = parseAttributeSpecifierSeq(ctx.attributeSpecifierSeq())
+        if (declarationAttributes.any { it.namespace == "milize" && it.name == "CSharpIgnore" }) {
             return
         }
 
         val declSpecifierSeq = ctx.declSpecifierSeq()
-        ret.modifier = declSpecifierSeq.declSpecifier().let { it.subList(0, it.size - 1).map { it.text }.toList() }
-        ret.returnType = ctx.declSpecifierSeq().declSpecifier().last().text
+        val declSpecifiers = declSpecifierSeq.declSpecifier()
 
-        val noPointerDeclarator =
-            ctx.initDeclaratorList().initDeclarator(0).declarator().pointerDeclarator().noPointerDeclarator()
+        ret.modifier = declSpecifiers.dropLast(1).map { it.text }
+
+        val pointerDeclarator = ctx.initDeclaratorList().initDeclarator(0).declarator().pointerDeclarator()
+        val noPointerDeclarator = pointerDeclarator.noPointerDeclarator()
+        val returnTypeDeclSpecifiers = declSpecifiers.filter { it.text != publicApiAnnotation }
+        ret.returnType = parseReturnType(
+            declSpecifiers = returnTypeDeclSpecifiers,
+            pointerDeclarator = pointerDeclarator,
+            attributes = declarationAttributes,
+        )
         ret.functionName = noPointerDeclarator.noPointerDeclarator().text
         val parametersAndQualifiers = noPointerDeclarator.parametersAndQualifiers()
         val parameterDeclarationClause = parametersAndQualifiers.parameterDeclarationClause()
         ret.parameters = parameterDeclarationClause?.parameterDeclarationList()?.parameterDeclaration()?.map {
-            val parameter = Parameter()
-
-            val attributes = mutableListOf<Attribute>()
-            for (attrSpec in it.attributeSpecifierSeq()?.attributeSpecifier() ?: listOf()) {
-                attributes += parseAttribute(attrSpec.attributeList().attribute())
-            }
-
-            parameter.type = it.declSpecifierSeq().declSpecifier().map { it.text }
-            parameter.attributes = attributes
-            parameter.name = it.declarator().pointerDeclarator().noPointerDeclarator().text
-            val pointerOperator = it.declarator().pointerDeclarator().text;
-            parameter.isReference = pointerOperator.contains("&")
-            parameter.isPointer = pointerOperator.contains("*")
-            parameter
+            val pointerDeclarator = it.declarator().pointerDeclarator()
+            parseParameter(
+                declSpecifiers = it.declSpecifierSeq().declSpecifier(),
+                pointerDeclarator = pointerDeclarator,
+                attributes = parseAttributeSpecifierSeq(it.attributeSpecifierSeq()),
+            )
         } ?: listOf()
 
         apiList += ret
 
-
-        val declSpecifier = declSpecifierSeq.declSpecifier()
 
         val funcDeclStart = ctx.start.startIndex
         val funcDeclStop = ctx.stop.stopIndex
@@ -77,25 +111,7 @@ class H2CSVisitor(val ctx: Context) : CPP14ParserBaseVisitor<Unit>() {
         val funcNameStart = noPointerDeclarator.noPointerDeclarator().start.startIndex
         val funcNameStop = noPointerDeclarator.noPointerDeclarator().stop.stopIndex
 
-        val bindingDeclTypeInfo = declSpecifier.map {
-            val start = it.start.startIndex
-            val stop = it.stop.stopIndex
-            input.getText(Interval(start, stop))
-        }.filter { it != publicApiAnnotation }.joinToString(separator = " ", prefix = "", postfix = " ")
-
         val functionName = input.getText(Interval(funcNameStart, funcNameStop));
-        val bindingDeclFunctionName = "FrameworkBinding$functionName";
-        val declFunctionRestPart = input.getText(Interval(funcNameStop + 1, funcDeclStop - 1))
-        val frameworkCall = "${functionName}${
-            ret.parameters.map { it.name }.joinToString(separator = ", ", prefix = "(", postfix = ")")
-        }"
-
-        if (!ret.attributes.any { it.namespace == "milize" && it.name == "EditorOnly" }) {
-            frameworkStaticBinding += """
-            ${bindingDeclTypeInfo} ${bindingDeclFunctionName} ${declFunctionRestPart} {
-                return ${frameworkCall};
-            }
-        """.trimIndent()
-        }
+        ret.frameworkDeclarationRest = input.getText(Interval(funcNameStop + 1, funcDeclStop - 1))
     }
 }

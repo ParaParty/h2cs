@@ -20,8 +20,6 @@ kotlin {
 
 tasks {
     generateGrammarSource {
-        dependsOn("sourcesJar")
-
         maxHeapSize = "64m"
         arguments = arguments + listOf("-visitor", "-long-messages")
         outputDirectory = outputDirectory.resolve("com/morizero/h2cs/generated/parser")

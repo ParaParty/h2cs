@@ -3,24 +3,32 @@ package com.morizero.h2cs.api
 import com.morizero.h2cs.model.APIInfo
 import com.morizero.h2cs.model.Context
 import com.morizero.h2cs.model.Parameter
+import com.morizero.h2cs.model.TypeInfo
 
 fun Parameter.toCS(ctx: Context): String {
     val modifier: String
     val refTypeAttribute = attributes.firstOrNull { it.namespace == "milize" && it.name == "RefType" }
-    if (refTypeAttribute != null) {
+    modifier = if (refTypeAttribute != null) {
         when (refTypeAttribute.args[0].lowercase()) {
-            "\"out\"" -> modifier = "out"
-            "\"ref\"" -> modifier = "ref"
+            "\"out\"" -> "out"
+            "\"ref\"" -> "ref"
             else -> throw Exception("Invalid RefType value: ${refTypeAttribute.args[0]}")
         }
     } else if (isReference) {
-        modifier = "out"
+        "out"
     } else {
-        modifier = ""
+        ""
     }
 
+    return listOf(modifier, toCSType(ctx), name).filter { it.isNotEmpty() }.joinToString(" ")
+}
+
+fun TypeInfo.toCSType(ctx: Context): String {
     val printedType = attributes.firstOrNull { it.namespace == "milize" && it.name == "CSharpType" }.let {
         if (it == null) {
+            if (type == listOf("void") && !isPointer) {
+                return "void"
+            }
             var t = ctx.resolveCPPTypeToCSType(type)
             if (t == "IntPtr") {
                 if (!isPointer) {
@@ -37,7 +45,11 @@ fun Parameter.toCS(ctx: Context): String {
         }
     }
 
-    return "${modifier} ${printedType} ${name}"
+    return printedType
+}
+
+fun TypeInfo.toCPPType(): String {
+    return (type + pointerOperators).joinToString(" ")
 }
 
 
@@ -63,8 +75,28 @@ fun APIInfo.toCS(ctx: Context): String {
 
     return """
             ${macro.first}
-            [DllImport(dllName, EntryPoint = EntryPointPrefix + "${cSymbolName}")]
-            internal static extern unsafe ${ctx.resolveCPPTypeToCSType(returnType)} ${methodName}(${parameterList});
+            [DllImport(dllName, EntryPoint = EntryPointPrefix + "$cSymbolName")]
+            internal static extern unsafe ${returnType.toCSType(ctx)} ${methodName}(${parameterList});
             ${macro.second}
 """.trimIndent()
+}
+
+fun APIInfo.toFrameworkBinding(): String {
+    if (attributes.any { it.namespace == "milize" && it.name == "EditorOnly" }) {
+        return ""
+    }
+
+    val bindingFunctionName = "FrameworkBinding$functionName"
+    val frameworkCall = parameters.map { it.name }.joinToString(separator = ", ", prefix = "$functionName(", postfix = ")")
+    val body = if (returnType.type == listOf("void") && !returnType.isPointer) {
+        "${frameworkCall};"
+    } else {
+        "return ${frameworkCall};"
+    }
+
+    return """
+            ${returnType.toCPPType()} ${bindingFunctionName} ${frameworkDeclarationRest} {
+                ${body}
+            }
+        """.trimIndent()
 }
